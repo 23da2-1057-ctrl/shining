@@ -4,7 +4,7 @@ import 'package:shining/firebase_options.dart';
 import 'package:shining/theme/app_theme.dart';
 import 'package:shining/navigation/app_router.dart';
 import 'package:shining/utils/constants.dart';
-import 'package:shining/data/migration.dart';
+// import 'package:shining/data/migration.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,7 +13,7 @@ void main() async {
   );
 
   // Uploads products to Firestore only on first run — safe to leave forever.
-  await migrateProductsToFirestore();
+  // await migrateProductsToFirestore();
 
   runApp(const MyApp());
 }

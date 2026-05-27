@@ -30,14 +30,6 @@ class _MainNavigationState extends State<MainNavigation> {
     const ProfileScreen(),
   ];
 
-  final List<String> _titles = [
-    'Home',
-    'Shop',
-    'Wishlist',
-    'Cart',
-    'Profile',
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -91,6 +83,7 @@ class _MainNavigationState extends State<MainNavigation> {
           ),
           BottomNavigationBarItem(
             icon: badges.Badge(
+              showBadge: _cartCount > 0,
               badgeContent: Text(
                 '$_cartCount',
                 style: const TextStyle(color: Colors.white, fontSize: 10),
@@ -101,6 +94,7 @@ class _MainNavigationState extends State<MainNavigation> {
               child: const Icon(Icons.shopping_cart_outlined),
             ),
             activeIcon: badges.Badge(
+              showBadge: _cartCount > 0,
               badgeContent: Text(
                 '$_cartCount',
                 style: const TextStyle(color: Colors.white, fontSize: 10),

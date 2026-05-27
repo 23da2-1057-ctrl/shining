@@ -3,6 +3,9 @@ import 'package:shining/screens/splash/splash_screen.dart';
 import 'package:shining/screens/auth/login_screen.dart';
 import 'package:shining/screens/auth/register_screen.dart';
 import 'package:shining/screens/product/product_detail_screen.dart';
+import 'package:shining/screens/product/product_listing_screen.dart';
+import 'package:shining/screens/cart/cart_screen.dart';
+import 'package:shining/screens/wishlist/wishlist_screen.dart';
 import 'package:shining/screens/checkout/checkout_screen.dart';
 import 'package:shining/screens/orders/order_history_screen.dart';
 import 'package:shining/navigation/main_navigation.dart';
@@ -29,9 +32,22 @@ class AppRouter {
           builder: (_) => ProductDetailScreen(product: product),
         );
       
+      case '/cart':
+        return MaterialPageRoute(builder: (_) => const CartScreen());
+
+      case '/wishlist':
+        return MaterialPageRoute(builder: (_) => const WishlistScreen());
+
+      case '/shop':
+        final args = settings.arguments;
+        return MaterialPageRoute(
+          builder: (_) => const ProductListingScreen(),
+          settings: RouteSettings(name: '/shop', arguments: args),
+        );
+
       case '/checkout':
         return MaterialPageRoute(builder: (_) => const CheckoutScreen());
-      
+
       case '/order-history':
         return MaterialPageRoute(builder: (_) => const OrderHistoryScreen());
       

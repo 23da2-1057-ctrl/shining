@@ -53,6 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: _primary,
       ));
     } else {
+      FocusScope.of(context).unfocus();
       Navigator.pushReplacementNamed(context, '/main');
     }
   }
@@ -267,7 +268,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // Google button
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Google Sign-In — coming soon!'),
+                              backgroundColor: _primary,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 14),

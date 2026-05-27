@@ -73,7 +73,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
@@ -99,11 +98,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
                 children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.arrow_back_rounded,
-                        color: Color(0xFFE91E8C), size: 24),
-                  ),
+                  if (Navigator.canPop(context))
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: const Icon(Icons.arrow_back_rounded,
+                          color: Color(0xFFE91E8C), size: 24),
+                    )
+                  else
+                    const SizedBox(width: 24),
                   Expanded(
                     child: Center(
                       child: Text(
@@ -218,6 +220,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _showComingSoon(BuildContext context, String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('$feature — coming soon!'),
+      backgroundColor: _primary,
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(seconds: 2),
+    ));
+  }
+
   Widget _buildMenuCard(BuildContext context) {
     return Transform.translate(
       offset: const Offset(0, -32),
@@ -242,7 +253,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               label: 'Edit Profile',
               iconBg: _primary.withValues(alpha: 0.1),
               iconColor: _primary,
-              onTap: () {},
+              onTap: () => _showComingSoon(context, 'Edit Profile'),
             ),
             _menuItem(
               icon: Icons.inventory_2_outlined,
@@ -264,21 +275,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
               label: 'Notifications',
               iconBg: _surfaceContainer,
               iconColor: _onSurfaceVariant,
-              onTap: () {},
+              onTap: () => _showComingSoon(context, 'Notifications'),
             ),
             _menuItem(
               icon: Icons.lock_outline_rounded,
               label: 'Change Password',
               iconBg: _surfaceContainer,
               iconColor: _onSurfaceVariant,
-              onTap: () {},
+              onTap: () => _showComingSoon(context, 'Change Password'),
             ),
             _menuItem(
               icon: Icons.info_outline_rounded,
               label: 'About Us',
               iconBg: _surfaceContainer,
               iconColor: _onSurfaceVariant,
-              onTap: () {},
+              onTap: () => _showComingSoon(context, 'About Us'),
             ),
             const SizedBox(height: 4),
             _menuItem(
@@ -463,68 +474,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNav() {
-    final items = [
-      {'icon': Icons.home_rounded, 'label': 'Home', 'active': false},
-      {'icon': Icons.grid_view_rounded, 'label': 'Shop', 'active': false},
-      {'icon': Icons.favorite_border_rounded, 'label': 'Wishlist', 'active': false},
-      {'icon': Icons.shopping_cart_outlined, 'label': 'Cart', 'active': false},
-      {'icon': Icons.person_rounded, 'label': 'Profile', 'active': true},
-    ];
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.92),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 30,
-            offset: const Offset(0, -8),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: items.map((item) {
-              final isActive = item['active'] as bool;
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(item['icon'] as IconData,
-                      color: isActive ? _primary : const Color(0xFFAAAAAA),
-                      size: 24),
-                  const SizedBox(height: 4),
-                  Text(
-                    item['label'] as String,
-                    style: GoogleFonts.epilogue(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                      color: isActive ? _primary : const Color(0xFFAAAAAA),
-                    ),
-                  ),
-                  if (isActive) ...[
-                    const SizedBox(height: 2),
-                    Container(
-                      width: 4,
-                      height: 4,
-                      decoration: const BoxDecoration(
-                          color: _primary, shape: BoxShape.circle),
-                    ),
-                  ],
-                ],
-              );
-            }).toList(),
-          ),
-        ),
       ),
     );
   }

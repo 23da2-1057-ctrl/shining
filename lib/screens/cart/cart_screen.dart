@@ -58,7 +58,6 @@ class _CartScreenState extends State<CartScreen> {
       backgroundColor: _surface,
       appBar: _buildTopBar(context, items.length),
       body: items.isEmpty ? _buildEmpty(context) : _buildContent(items, subtotal),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
@@ -84,11 +83,14 @@ class _CartScreenState extends State<CartScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
                 children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.arrow_back_rounded,
-                        color: Color(0xFFE91E8C), size: 24),
-                  ),
+                  if (Navigator.canPop(context))
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: const Icon(Icons.arrow_back_rounded,
+                          color: Color(0xFFE91E8C), size: 24),
+                    )
+                  else
+                    const SizedBox(width: 24),
                   Expanded(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -503,71 +505,6 @@ class _CartScreenState extends State<CartScreen> {
               const Icon(Icons.chevron_right_rounded,
                   color: Colors.white, size: 20),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomNav() {
-    final items = [
-      {'icon': Icons.home_rounded, 'label': 'Home', 'active': false},
-      {'icon': Icons.grid_view_rounded, 'label': 'Shop', 'active': false},
-      {'icon': Icons.favorite_border_rounded, 'label': 'Wishlist', 'active': false},
-      {'icon': Icons.shopping_cart_rounded, 'label': 'Cart', 'active': true},
-      {'icon': Icons.person_outline_rounded, 'label': 'Profile', 'active': false},
-    ];
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.92),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 30,
-            offset: const Offset(0, -8),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: items.map((item) {
-              final isActive = item['active'] as bool;
-              return GestureDetector(
-                onTap: () {},
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(item['icon'] as IconData,
-                        color: isActive ? _primary : const Color(0xFFAAAAAA),
-                        size: 24),
-                    const SizedBox(height: 4),
-                    Text(
-                      item['label'] as String,
-                      style: GoogleFonts.epilogue(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
-                        color: isActive ? _primary : const Color(0xFFAAAAAA),
-                      ),
-                    ),
-                    if (isActive) ...[
-                      const SizedBox(height: 2),
-                      Container(
-                        width: 4,
-                        height: 4,
-                        decoration: const BoxDecoration(
-                            color: _primary, shape: BoxShape.circle),
-                      ),
-                    ],
-                  ],
-                ),
-              );
-            }).toList(),
           ),
         ),
       ),

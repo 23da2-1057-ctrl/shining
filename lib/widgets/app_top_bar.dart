@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shining/theme/app_theme.dart';
 
 class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;

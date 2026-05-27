@@ -31,8 +31,36 @@ class _HomeScreenState extends State<HomeScreen> {
     {'label': 'All', 'icon': Icons.grid_view_rounded},
     {'label': 'Dresses', 'icon': Icons.checkroom_rounded},
     {'label': 'Tops', 'icon': Icons.style_rounded},
+    {'label': 'Jeans', 'icon': Icons.straighten_rounded},
     {'label': 'Bags', 'icon': Icons.shopping_bag_rounded},
+    {'label': 'Shoes', 'icon': Icons.roller_skating_rounded},
+    {'label': 'Accessories', 'icon': Icons.diamond_rounded},
   ];
+
+  // Banner carousel
+  final _bannerController = PageController();
+  int _currentBanner = 0;
+  final List<Map<String, dynamic>> _banners = [
+    {
+      'title': 'New Arrivals 🔥',
+      'subtitle': 'Elevate your style game today.',
+      'colors': [Color(0xFFB6004F), Color(0xFF7738C0)],
+    },
+    {
+      'title': 'Summer Sale ☀️',
+      'subtitle': 'Up to 40% off selected items.',
+      'colors': [Color(0xFFFF6B35), Color(0xFFFF2D78)],
+    },
+    {
+      'title': 'VIP Access ✨',
+      'subtitle': 'Exclusive drops for members only.',
+      'colors': [Color(0xFF7738C0), Color(0xFF1A1A2E)],
+    },
+  ];
+
+  // Search
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
 
   final _firestoreService = FirestoreService();
   List<ProductModel> _products = [];
@@ -66,14 +94,29 @@ class _HomeScreenState extends State<HomeScreen> {
     _productsSub?.cancel();
     _wishlistSub?.cancel();
     _profileSub?.cancel();
+    _searchController.dispose();
+    _bannerController.dispose();
     super.dispose();
   }
 
   List<ProductModel> get _filteredProducts {
-    if (_selectedCategory == 0) return _products.take(4).toList();
-    final cat = _categories[_selectedCategory]['label'] as String;
-    final filtered = _products.where((p) => p.category == cat).toList();
-    return filtered.isEmpty ? _products.take(4).toList() : filtered;
+    var base = _products;
+    // Apply search filter first
+    if (_searchQuery.isNotEmpty) {
+      base = base
+          .where((p) =>
+              p.name.toLowerCase().contains(_searchQuery) ||
+              p.category.toLowerCase().contains(_searchQuery))
+          .toList();
+    }
+    // Apply category filter
+    if (_selectedCategory != 0) {
+      final cat = _categories[_selectedCategory]['label'] as String;
+      final filtered = base.where((p) => p.category == cat).toList();
+      return filtered.isEmpty ? base : filtered;
+    }
+    // All: limit to 6 when not searching, show all matches when searching
+    return _searchQuery.isEmpty ? base.take(6).toList() : base;
   }
 
   @override
@@ -98,7 +141,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
@@ -175,6 +217,9 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: TextField(
+        controller: _searchController,
+        onChanged: (query) =>
+            setState(() => _searchQuery = query.trim().toLowerCase()),
         style: GoogleFonts.plusJakartaSans(
           fontSize: 14,
           color: _onSurface,
@@ -186,11 +231,22 @@ class _HomeScreenState extends State<HomeScreen> {
             color: _onSurfaceVariant,
           ),
           prefixIcon: const Icon(Icons.search_rounded, color: _primary),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? GestureDetector(
+                  onTap: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                  child: const Icon(Icons.close_rounded,
+                      color: _onSurfaceVariant, size: 18),
+                )
+              : null,
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: _primary.withValues(alpha: 0.3), width: 2),
+            borderSide:
+                BorderSide(color: _primary.withValues(alpha: 0.3), width: 2),
           ),
           contentPadding: const EdgeInsets.symmetric(vertical: 16),
         ),
@@ -205,78 +261,87 @@ class _HomeScreenState extends State<HomeScreen> {
           borderRadius: BorderRadius.circular(12),
           child: AspectRatio(
             aspectRatio: 16 / 9,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFFB6004F), Color(0xFF7738C0)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+            child: PageView.builder(
+              controller: _bannerController,
+              onPageChanged: (i) => setState(() => _currentBanner = i),
+              itemCount: _banners.length,
+              itemBuilder: (_, index) {
+                final b = _banners[index];
+                final colors = b['colors'] as List<Color>;
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: colors,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: const Icon(Icons.checkroom_rounded,
+                          size: 80, color: Colors.white24),
                     ),
-                  ),
-                  child: const Icon(Icons.checkroom_rounded,
-                      size: 80, color: Colors.white24),
-                ),
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          _primary.withValues(alpha: 0.85),
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.55),
+                            ],
+                            stops: const [0.3, 1.0],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 24,
+                      left: 24,
+                      right: 24,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            b['title'] as String,
+                            style: GoogleFonts.epilogue(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: -0.5,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            b['subtitle'] as String,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
+                          ),
                         ],
-                        stops: const [0.3, 1.0],
                       ),
                     ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 24,
-                  left: 24,
-                  right: 24,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'New Arrivals 🔥',
-                        style: GoogleFonts.epilogue(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: -0.5,
-                          height: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Elevate your style game today.',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white.withValues(alpha: 0.9),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                  ],
+                );
+              },
             ),
           ),
         ),
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _dot(active: true),
-            const SizedBox(width: 6),
-            _dot(active: false),
-            const SizedBox(width: 6),
-            _dot(active: false),
-          ],
+          children: List.generate(_banners.length, (i) {
+            final active = i == _currentBanner;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: _dot(active: active),
+            );
+          }),
         ),
       ],
     );
@@ -311,7 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             GestureDetector(
-              onTap: () {},
+              onTap: () => Navigator.pushNamed(context, '/shop'),
               child: Text(
                 'View All',
                 style: GoogleFonts.plusJakartaSans(
@@ -442,7 +507,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildProductCard(ProductModel product) {
     final isWishlisted = _wishlistIds.contains(product.id);
     final userId = FirebaseAuth.instance.currentUser?.uid;
-    return Column(
+    return GestureDetector(
+      onTap: () =>
+          Navigator.pushNamed(context, '/product-detail', arguments: product),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
@@ -574,74 +642,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildBottomNav() {
-    final items = [
-      {'icon': Icons.home_rounded, 'label': 'Home', 'active': true},
-      {'icon': Icons.grid_view_rounded, 'label': 'Shop', 'active': false},
-      {'icon': Icons.favorite_border_rounded, 'label': 'Wishlist', 'active': false},
-      {'icon': Icons.shopping_cart_outlined, 'label': 'Cart', 'active': false},
-      {'icon': Icons.person_outline_rounded, 'label': 'Profile', 'active': false},
-    ];
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.92),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 30,
-            offset: const Offset(0, -8),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: items.map((item) {
-              final isActive = item['active'] as bool;
-              return GestureDetector(
-                onTap: () {},
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      item['icon'] as IconData,
-                      color: isActive ? _primary : const Color(0xFFAAAAAA),
-                      size: 24,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item['label'] as String,
-                      style: GoogleFonts.epilogue(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
-                        color: isActive ? _primary : const Color(0xFFAAAAAA),
-                      ),
-                    ),
-                    if (isActive) ...[
-                      const SizedBox(height: 2),
-                      Container(
-                        width: 4,
-                        height: 4,
-                        decoration: const BoxDecoration(
-                          color: _primary,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ),
       ),
     );
   }

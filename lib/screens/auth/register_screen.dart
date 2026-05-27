@@ -68,6 +68,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         backgroundColor: _primary,
       ));
     } else {
+      FocusScope.of(context).unfocus();
       Navigator.pushReplacementNamed(context, '/main');
     }
   }
@@ -483,7 +484,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _socialBtn(IconData icon, String label) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$label Sign-In — coming soon!'),
+            backgroundColor: _primary,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
       child: Container(
         height: 56,
         decoration: BoxDecoration(

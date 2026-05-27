@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shining/data/app_data.dart';
+import 'package:shining/models/cart_item_model.dart';
 import 'package:shining/models/order_model.dart';
 import 'package:shining/services/firestore_service.dart';
 
@@ -40,10 +43,83 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     super.initState();
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId != null) {
+      // Seed 2 demo orders into Firestore if the user has none yet
+      _seedDemoOrdersIfEmpty(userId);
       _ordersSub = _firestoreService.getUserOrders(userId).listen((orders) {
         if (mounted) setState(() => _orders = orders);
       });
     }
+  }
+
+  /// Writes two sample orders (one Delivered, one Pending) into Firestore
+  /// only on the very first open — subsequent calls are instant no-ops.
+  Future<void> _seedDemoOrdersIfEmpty(String userId) async {
+    final db = FirebaseFirestore.instance;
+    final existing = await db
+        .collection('users')
+        .doc(userId)
+        .collection('orders')
+        .limit(1)
+        .get();
+    if (existing.docs.isNotEmpty) return; // already has orders
+
+    final batch = db.batch();
+
+    // Demo order 1 — Delivered
+    final ref1 =
+        db.collection('users').doc(userId).collection('orders').doc();
+    batch.set(
+      ref1,
+      OrderModel(
+        orderId: ref1.id,
+        items: [
+          CartItemModel(
+            id: 'demo_item_1',
+            product: AppData.products[0], // Elegant Evening Dress
+            selectedSize: 'M',
+            selectedColor: 'Black',
+            quantity: 1,
+          ),
+        ],
+        totalAmount: AppData.products[0].price,
+        deliveryAddress: '123 Main Street, New York, NY 10001',
+        orderDate: DateTime(2024, 1, 15),
+        status: 'Delivered',
+      ).toMap(),
+    );
+
+    // Demo order 2 — Pending (2 items)
+    final ref2 =
+        db.collection('users').doc(userId).collection('orders').doc();
+    batch.set(
+      ref2,
+      OrderModel(
+        orderId: ref2.id,
+        items: [
+          CartItemModel(
+            id: 'demo_item_2',
+            product: AppData.products[2], // Classic White T-Shirt
+            selectedSize: 'M',
+            selectedColor: 'White',
+            quantity: 2,
+          ),
+          CartItemModel(
+            id: 'demo_item_3',
+            product: AppData.products[4], // Slim Fit Blue Jeans
+            selectedSize: '28',
+            selectedColor: 'Light Blue',
+            quantity: 1,
+          ),
+        ],
+        totalAmount:
+            AppData.products[2].price * 2 + AppData.products[4].price,
+        deliveryAddress: '456 Oak Avenue, Los Angeles, CA 90001',
+        orderDate: DateTime(2024, 2, 20),
+        status: 'Pending',
+      ).toMap(),
+    );
+
+    await batch.commit();
   }
 
   @override
@@ -93,7 +169,6 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
@@ -309,6 +384,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             children: [
               SizedBox(
                 height: 56,
+                width: 180,
                 child: Stack(
                   children: [
                     ...List.generate(
@@ -561,57 +637,4 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
-  Widget _buildBottomNav() {
-    final items = [
-      {'icon': Icons.home_rounded, 'label': 'Home'},
-      {'icon': Icons.grid_view_rounded, 'label': 'Shop'},
-      {'icon': Icons.favorite_border_rounded, 'label': 'Wishlist'},
-      {'icon': Icons.shopping_cart_outlined, 'label': 'Cart'},
-      {'icon': Icons.person_outline_rounded, 'label': 'Profile'},
-    ];
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.92),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 30,
-            offset: const Offset(0, -8),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: items.map((item) {
-              return GestureDetector(
-                onTap: () {},
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(item['icon'] as IconData,
-                        color: const Color(0xFFAAAAAA), size: 24),
-                    const SizedBox(height: 4),
-                    Text(
-                      item['label'] as String,
-                      style: GoogleFonts.epilogue(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
-                        color: const Color(0xFFAAAAAA),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ),
-    );
-  }
 }

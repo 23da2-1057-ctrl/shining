@@ -39,7 +39,8 @@ class FirestoreService {
   }
 
   Future<void> addToCart(
-      String userId, ProductModel product, String size, String color) async {
+      String userId, ProductModel product, String size, String color,
+      {int quantity = 1}) async {
     final ref = _db
         .collection('users')
         .doc(userId)
@@ -50,7 +51,7 @@ class FirestoreService {
       product: product,
       selectedSize: size,
       selectedColor: color,
-      quantity: 1,
+      quantity: quantity,
     );
     await ref.set(item.toMap());
   }

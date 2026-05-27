@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shining/models/product_model.dart';
-import 'package:shining/theme/app_theme.dart';
 import 'package:shining/utils/constants.dart';
 
 class ProductCard extends StatelessWidget {

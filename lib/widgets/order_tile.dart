@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shining/models/order_model.dart';
-import 'package:shining/theme/app_theme.dart';
 import 'package:shining/utils/constants.dart';
 
 class OrderTile extends StatelessWidget {
@@ -59,7 +58,7 @@ class OrderTile extends StatelessWidget {
                     vertical: kPaddingS,
                   ),
                   decoration: BoxDecoration(
-                    color: _getStatusColor(order.status).withOpacity(0.1),
+                    color: _getStatusColor(order.status).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(

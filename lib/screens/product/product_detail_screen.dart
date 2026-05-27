@@ -15,12 +15,6 @@ const Color _onSurface = Color(0xFF2D2F2F);
 const Color _onSurfaceVariant = Color(0xFF5A5C5C);
 const Color _tertiary = Color(0xFF695B00);
 
-final List<Color> _colorSwatches = [
-  _primary,
-  _secondary,
-  const Color(0xFFFADD30),
-  const Color(0xFF1A1A1A),
-];
 
 class ProductDetailScreen extends StatefulWidget {
   final ProductModel product;
@@ -65,13 +59,61 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     super.dispose();
   }
 
+  /// Maps a color name string to an actual Color for the swatch display.
+  Color _colorFromName(String name) {
+    switch (name.toLowerCase()) {
+      case 'black':
+      case 'black-white':
+        return const Color(0xFF1A1A1A);
+      case 'white':
+      case 'white-black':
+        return const Color(0xFFF0F0F0);
+      case 'navy':
+      case 'navy-white':
+        return const Color(0xFF001F5B);
+      case 'dark blue':
+      case 'blue':
+        return const Color(0xFF0D47A1);
+      case 'light blue':
+        return const Color(0xFF64B5F6);
+      case 'burgundy':
+        return const Color(0xFF800020);
+      case 'pink':
+        return const Color(0xFFFF80AB);
+      case 'red':
+      case 'red-white':
+        return const Color(0xFFE53935);
+      case 'gray':
+      case 'grey':
+        return const Color(0xFF9E9E9E);
+      case 'dark gray':
+      case 'dark grey':
+        return const Color(0xFF424242);
+      case 'beige':
+        return const Color(0xFFD4C5A9);
+      case 'tan':
+        return const Color(0xFFD2B48C);
+      case 'brown':
+        return const Color(0xFF795548);
+      case 'gold':
+        return const Color(0xFFFFD700);
+      case 'silver':
+        return const Color(0xFFBDBDBD);
+      case 'purple':
+        return const Color(0xFF7B1FA2);
+      case 'multicolor':
+        return const Color(0xFFFF6B6B);
+      default:
+        return const Color(0xFF9E9E9E);
+    }
+  }
+
   Future<void> _addToCart() async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return;
-    for (int i = 0; i < _quantity; i++) {
-      await _firestoreService.addToCart(
-          userId, widget.product, _selectedSize, _selectedColor);
-    }
+    await _firestoreService.addToCart(
+        userId, widget.product, _selectedSize, _selectedColor,
+        quantity: _quantity);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -97,7 +139,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ],
           ),
           _buildTopBar(context),
-          _buildBottomBar(),
         ],
       ),
     );
@@ -208,8 +249,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ],
                 ),
                 child: Icon(
-                  isWishlisted ? Icons.favorite_rounded : Icons.favorite_rounded,
-                  color: isWishlisted ? _primary : _primary,
+                  isWishlisted
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  color: isWishlisted ? _primary : _onSurfaceVariant,
                   size: 22,
                 ),
               ),
@@ -221,8 +264,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildSheet() {
-    return Container(
-      margin: const EdgeInsets.only(top: -48),
+    // Transform.translate is used instead of a negative Container margin
+    // because Flutter does not allow negative margins (assertion error).
+    // The visual overlap effect is identical.
+    return Transform.translate(
+      offset: const Offset(0, -48),
+      child: Container(
       decoration: const BoxDecoration(
         color: _surfaceContainerLowest,
         borderRadius: BorderRadius.vertical(top: Radius.circular(48)),
@@ -266,15 +313,25 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
           const SizedBox(height: 10),
 
-          // Rating row
+          // Rating row — dynamic stars based on actual product.rating
           Row(
             children: [
-              ...List.generate(4, (_) => const Icon(Icons.star_rounded,
-                  size: 16, color: _tertiary)),
-              const Icon(Icons.star_half_rounded, size: 16, color: _tertiary),
+              ...List.generate(5, (i) {
+                final rating = widget.product.rating;
+                if (i < rating.floor()) {
+                  return const Icon(Icons.star_rounded,
+                      size: 16, color: _tertiary);
+                } else if (i < rating && (rating - i) >= 0.5) {
+                  return const Icon(Icons.star_half_rounded,
+                      size: 16, color: _tertiary);
+                } else {
+                  return const Icon(Icons.star_outline_rounded,
+                      size: 16, color: _tertiary);
+                }
+              }),
               const SizedBox(width: 6),
               Text(
-                '(${widget.product.reviewCount} Reviews)',
+                '${widget.product.rating.toStringAsFixed(1)} (${widget.product.reviewCount} Reviews)',
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -324,40 +381,58 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
           const SizedBox(height: 28),
 
-          // Color selector
+          // Color selector — uses actual product colors
           _sectionLabel('Select Color'),
           const SizedBox(height: 12),
-          Row(
-            children: List.generate(_colorSwatches.length, (i) {
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: List.generate(widget.product.colors.length, (i) {
+              final colorName = widget.product.colors[i];
               final active = i == _selectedColorIndex;
               return GestureDetector(
                 onTap: () => setState(() {
                   _selectedColorIndex = i;
-                  if (i < widget.product.colors.length) {
-                    _selectedColor = widget.product.colors[i];
-                  }
+                  _selectedColor = colorName;
                 }),
-                child: Container(
-                  margin: const EdgeInsets.only(right: 14),
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: _colorSwatches[i],
-                    shape: BoxShape.circle,
-                    border: active
-                        ? Border.all(
-                            color: _surfaceContainer,
-                            width: 3,
-                            strokeAlign: BorderSide.strokeAlignOutside,
-                          )
-                        : null,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.12),
-                        blurRadius: 4,
+                child: Column(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: _colorFromName(colorName),
+                        shape: BoxShape.circle,
+                        border: active
+                            ? Border.all(
+                                color: _primary,
+                                width: 2,
+                                strokeAlign: BorderSide.strokeAlignOutside,
+                              )
+                            : Border.all(
+                                color: _surfaceContainer,
+                                width: 1,
+                              ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 4,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      colorName.split('-').first,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 9,
+                        fontWeight: active
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        color: active ? _primary : _onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               );
             }),
@@ -464,7 +539,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Wishlist link
+          // Wishlist link — label and icon update with state
           Center(
             child: GestureDetector(
               onTap: () {
@@ -479,11 +554,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.favorite_border_rounded,
-                      size: 16, color: _primary),
+                  Icon(
+                    _isWishlisted
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    size: 16,
+                    color: _primary,
+                  ),
                   const SizedBox(width: 6),
                   Text(
-                    'Add to Wishlist 🤍',
+                    _isWishlisted
+                        ? 'Remove from Wishlist'
+                        : 'Add to Wishlist 🤍',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -496,11 +578,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
         ],
       ),
+      ),  // closes Transform.translate child Container
     );
-  }
-
-  Widget _buildBottomBar() {
-    return const SizedBox.shrink();
   }
 
   Widget _sectionLabel(String text) {
